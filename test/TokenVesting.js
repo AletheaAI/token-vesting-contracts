@@ -426,6 +426,8 @@ describe("TokenVesting", function () {
 			await expect(tokenVesting.revoke(vestingScheduleId))
 				.to.emit(testToken, "Transfer")
 				.withArgs(owner.address, beneficiary.address, 50);
+			expect(await tokenVesting.getVestingSchedulesTotalAmount(), "incorrect vestingSchedulesTotalAmount")
+				.to.equal(0);
 		});
 
 		it("Should not allow computing, releasing, revoking if already revoked or not initialized", async function () {

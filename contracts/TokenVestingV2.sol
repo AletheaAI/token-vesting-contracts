@@ -209,10 +209,12 @@ contract TokenVestingV2 is UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuardU
 	) public virtual onlyOwner onlyIfVestingScheduleNotRevoked(vestingScheduleId) {
 		VestingSchedule storage vestingSchedule = vestingSchedules[vestingScheduleId];
 		require(vestingSchedule.revocable == true, "TokenVesting: vesting is not revocable");
+/*
 		uint128 vestedAmount = _computeReleasableAmount(vestingSchedule);
 		if (vestedAmount > 0) {
 			release(vestingScheduleId, vestedAmount);
 		}
+*/
 		uint256 unreleased = vestingSchedule.amountTotal - vestingSchedule.released;
 		vestingSchedulesTotalAmount = vestingSchedulesTotalAmount - unreleased;
 		vestingSchedule.revoked = true;

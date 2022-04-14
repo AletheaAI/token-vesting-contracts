@@ -387,7 +387,7 @@ describe("TokenVestingV2", function () {
 			 */
 		});
 
-		it("Should release vested tokens if revoked", async function () {
+		it("Should not release vested tokens if revoked", async function () {
 			// deploy vesting contract
 			const tokenVesting = await deploy();
 			expect((await tokenVesting.getToken()).toString()).to.equal(testToken.address);
@@ -424,9 +424,9 @@ describe("TokenVestingV2", function () {
 			const halfTime = baseTime + duration / 2;
 			await tokenVesting.setCurrentTime(halfTime);
 
-			await expect(tokenVesting.revoke(vestingScheduleId))
-				.to.emit(testToken, "Transfer")
-				.withArgs(owner.address, beneficiary.address, 50);
+			await expect(tokenVesting.revoke(vestingScheduleId)).to.not.emit(testToken, "Transfer");
+			expect(await tokenVesting.getVestingSchedulesTotalAmount(), "incorrect vestingSchedulesTotalAmount")
+				.to.equal(0);
 		});
 
 		it("Should not allow computing, releasing, revoking if already revoked or not initialized", async function () {
