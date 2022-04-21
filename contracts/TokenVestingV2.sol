@@ -308,7 +308,7 @@ contract TokenVestingV2 is UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuardU
 			return 0;
 		} else if (currentTime < vestingSchedule.cliff) {
 			return vestingSchedule.immediatelyReleasableAmount - vestingSchedule.released;
-		} else if (currentTime >= vestingSchedule.cliff + vestingSchedule.duration) {
+		} else if (currentTime >= vestingSchedule.start + vestingSchedule.duration) {
 			return vestingSchedule.amountTotal - vestingSchedule.released;
 		} else {
 			uint256 timeFromCliff = currentTime - vestingSchedule.cliff;
@@ -316,7 +316,7 @@ contract TokenVestingV2 is UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuardU
 			uint256 vestedSlicePeriods = timeFromCliff / secondsPerSlice;
 			uint256 vestedSeconds = vestedSlicePeriods * secondsPerSlice;
 			uint256 vestedAmount = (vestingSchedule.amountTotal - vestingSchedule.immediatelyReleasableAmount)
-				* vestedSeconds / vestingSchedule.duration
+				* vestedSeconds / (vestingSchedule.duration + vestingSchedule.start - vestingSchedule.cliff)
 				+ vestingSchedule.immediatelyReleasableAmount
 				- vestingSchedule.released;
 			return uint128(vestedAmount);
