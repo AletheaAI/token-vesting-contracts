@@ -183,7 +183,7 @@ describe("TokenVestingV2", function () {
 			expect(await tokenVesting.computeReleasableAmount(vestingScheduleId)).to.be.equal(0);
 
 			// set time to half the vesting period
-			const halfTime = cliffTime + duration / 2;
+			const halfTime = cliffTime + (duration - cliff) / 2;
 			await tokenVesting.setCurrentTime(halfTime);
 
 			// check that vested amount is half the total amount to vest
