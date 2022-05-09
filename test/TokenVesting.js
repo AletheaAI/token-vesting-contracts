@@ -25,9 +25,16 @@ describe("TokenVesting", function () {
 	describe("Vesting", function () {
 		async function deploy() {
 			const tokenVesting = await TokenVesting.deploy();
-			await tokenVesting.postConstruct(testToken.address, owner.address);
 			await tokenVesting.deployed();
-			return tokenVesting;
+
+			const init_data = (new ethers.utils.Interface(
+				["function postConstruct(address token_, address treasury_)"]
+			)).encodeFunctionData("postConstruct", [testToken.address, owner.address]);
+
+			const proxy = await Proxy.deploy(tokenVesting.address, init_data);
+			await proxy.deployed();
+
+			return await TokenVesting.attach(proxy.address);
 		}
 
 		it("Should assign the total supply of tokens to the owner", async function () {

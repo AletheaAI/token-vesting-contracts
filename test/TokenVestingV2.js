@@ -4,7 +4,7 @@ describe("TokenVestingV2", function () {
 	let Token;
 	const totalSupply = 1000000;
 	let testToken;
-	let TokenVesting;
+	let TokenVesting, TokenVestingV2;
 	let Proxy;
 	let owner;
 	let addr1;
@@ -13,7 +13,8 @@ describe("TokenVestingV2", function () {
 
 	before(async function () {
 		Token = await ethers.getContractFactory("Token");
-		TokenVesting = await ethers.getContractFactory("MockTokenVestingV2");
+		TokenVesting = await ethers.getContractFactory("MockTokenVesting");
+		TokenVestingV2 = await ethers.getContractFactory("MockTokenVestingV2");
 		Proxy = await ethers.getContractFactory("ERC1967Proxy");
 	});
 	beforeEach(async function () {
@@ -25,9 +26,23 @@ describe("TokenVestingV2", function () {
 	describe("Vesting", function () {
 		async function deploy() {
 			const tokenVesting = await TokenVesting.deploy();
-			await tokenVesting.postConstruct(testToken.address, owner.address);
 			await tokenVesting.deployed();
-			return tokenVesting;
+
+			const init_data = (new ethers.utils.Interface(
+				["function postConstruct(address token_, address treasury_)"]
+			)).encodeFunctionData("postConstruct", [testToken.address, owner.address]);
+
+			const proxy = await Proxy.deploy(tokenVesting.address, init_data);
+			await proxy.deployed();
+
+			const ref = await TokenVestingV2.attach(proxy.address);
+
+			const tokenVestingV2 = await TokenVestingV2.deploy();
+			await tokenVestingV2.deployed();
+
+			await ref.upgradeTo(tokenVestingV2.address);
+
+			return ref;
 		}
 
 		it("Should assign the total supply of tokens to the owner", async function () {
