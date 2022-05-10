@@ -35,6 +35,10 @@ describe("TokenVestingV2", function () {
 			const proxy = await Proxy.deploy(tokenVesting.address, init_data);
 			await proxy.deployed();
 
+			return await TokenVesting.attach(proxy.address);
+		}
+
+		async function upgrade(proxy) {
 			const ref = await TokenVestingV2.attach(proxy.address);
 
 			const tokenVestingV2 = await TokenVestingV2.deploy();
@@ -45,6 +49,11 @@ describe("TokenVestingV2", function () {
 			return ref;
 		}
 
+		async function deploy_v2() {
+			const proxy = await deploy();
+			return await upgrade(proxy);
+		}
+
 		it("Should assign the total supply of tokens to the owner", async function () {
 			const ownerBalance = await testToken.balanceOf(owner.address);
 			expect(await testToken.totalSupply()).to.equal(ownerBalance);
@@ -52,26 +61,26 @@ describe("TokenVestingV2", function () {
 
 		it("Should set token address correctly", async function () {
 			// deploy vesting contract
-			const tokenVesting = await deploy();
+			const tokenVesting = await deploy_v2();
 			expect((await tokenVesting.getToken()).toString()).to.equal(testToken.address);
 		});
 
 		it("Should set treasury address correctly", async function () {
 			// deploy vesting contract
-			const tokenVesting = await deploy();
+			const tokenVesting = await deploy_v2();
 			expect((await tokenVesting.getTreasury()).toString()).to.equal(owner.address);
 		});
 
 		it("Should update treasury address correctly", async function () {
 			// deploy vesting contract
-			const tokenVesting = await deploy();
+			const tokenVesting = await deploy_v2();
 			await tokenVesting.setTreasury(addr1.address);
 			expect((await tokenVesting.getTreasury()).toString()).to.equal(addr1.address);
 		});
 
 		it("Should create vesting schedule correctly", async function () {
 			// deploy vesting contract
-			const tokenVesting = await deploy();
+			let tokenVesting = await deploy();
 
 			const baseTime = 1622551248;
 			const beneficiary = addr1;
@@ -94,6 +103,9 @@ describe("TokenVestingV2", function () {
 				amount,
 				immediatelyReleasableAmount
 			);
+
+			// upgrade the vesting contract
+			tokenVesting = await upgrade(tokenVesting);
 
 			// compute vesting schedule id
 			const vestingScheduleId = await tokenVesting.computeVestingScheduleIdForAddressAndIndex(beneficiary.address, 0);
@@ -119,7 +131,7 @@ describe("TokenVestingV2", function () {
 
 		it("Should not allow releasing before vesting schedule starts", async function() {
 			// deploy vesting contract
-			const tokenVesting = await deploy();
+			let tokenVesting = await deploy();
 
 			const baseTime = 1622551248;
 			const beneficiary = addr1;
@@ -143,6 +155,9 @@ describe("TokenVestingV2", function () {
 				immediatelyReleasableAmount
 			);
 
+			// upgrade the vesting contract
+			tokenVesting = await upgrade(tokenVesting);
+
 			// compute vesting schedule id
 			const vestingScheduleId = await tokenVesting.computeVestingScheduleIdForAddressAndIndex(beneficiary.address, 0);
 
@@ -160,7 +175,7 @@ describe("TokenVestingV2", function () {
 
 		it("Should vest tokens gradually", async function () {
 			// deploy vesting contract
-			const tokenVesting = await deploy();
+			let tokenVesting = await deploy();
 			expect((await tokenVesting.getToken()).toString()).to.equal(testToken.address);
 			// approve tokens to be spent by vesting contract
 			await expect(testToken.approve(tokenVesting.address, 1000))
@@ -188,6 +203,10 @@ describe("TokenVestingV2", function () {
 				amount,
 				0
 			);
+
+			// upgrade the vesting contract
+			tokenVesting = await upgrade(tokenVesting);
+
 			expect(await tokenVesting.getVestingSchedulesCount()).to.be.equal(1);
 			expect(await tokenVesting.getVestingSchedulesCountByBeneficiary(beneficiary.address)).to.be.equal(1);
 
@@ -279,7 +298,7 @@ describe("TokenVestingV2", function () {
 
 		it("Should vest tokens gradually when immediatelyReleasableAmount is set", async function () {
 			// deploy vesting contract
-			const tokenVesting = await deploy();
+			let tokenVesting = await deploy();
 			expect((await tokenVesting.getToken()).toString()).to.equal(testToken.address);
 			// approve tokens to be spent by vesting contract
 			await expect(testToken.approve(tokenVesting.address, 1000))
@@ -307,6 +326,10 @@ describe("TokenVestingV2", function () {
 				amount,
 				immediatelyReleasableAmount
 			);
+
+			// upgrade the vesting contract
+			tokenVesting = await upgrade(tokenVesting);
+
 			expect(await tokenVesting.getVestingSchedulesCount()).to.be.equal(1);
 			expect(await tokenVesting.getVestingSchedulesCountByBeneficiary(beneficiary.address)).to.be.equal(1);
 
@@ -404,7 +427,7 @@ describe("TokenVestingV2", function () {
 
 		it("Should not release vested tokens if revoked", async function () {
 			// deploy vesting contract
-			const tokenVesting = await deploy();
+			let tokenVesting = await deploy();
 			expect((await tokenVesting.getToken()).toString()).to.equal(testToken.address);
 			// approve tokens to be spent by vesting contract
 			await expect(testToken.approve(tokenVesting.address, 1000))
@@ -432,6 +455,9 @@ describe("TokenVestingV2", function () {
 				0
 			);
 
+			// upgrade the vesting contract
+			tokenVesting = await upgrade(tokenVesting);
+
 			// compute vesting schedule id
 			const vestingScheduleId = await tokenVesting.computeVestingScheduleIdForAddressAndIndex(beneficiary.address, 0);
 
@@ -446,7 +472,7 @@ describe("TokenVestingV2", function () {
 
 		it("Should not allow computing, releasing, revoking if already revoked or not initialized", async function () {
 			// deploy vesting contract
-			const tokenVesting = await deploy();
+			let tokenVesting = await deploy();
 
 			await expect(tokenVesting.computeReleasableAmount("0x" + "0".repeat(64))).to.be.reverted;
 			await expect(tokenVesting.revoke("0x" + "0".repeat(64))).to.be.reverted;
@@ -473,6 +499,9 @@ describe("TokenVestingV2", function () {
 				immediatelyReleasableAmount
 			);
 
+			// upgrade the vesting contract
+			tokenVesting = await upgrade(tokenVesting);
+
 			// compute vesting schedule id
 			const vestingScheduleId = await tokenVesting.computeVestingScheduleIdForAddressAndIndex(beneficiary.address, 0);
 			// approve token transfer and revoke
@@ -485,7 +514,7 @@ describe("TokenVestingV2", function () {
 		});
 
 		it("Should compute vesting schedule index", async function () {
-			const tokenVesting = await deploy();
+			const tokenVesting = await deploy_v2();
 			const expectedVestingScheduleId = "0xa279197a1d7a4b7398aa0248e95b8fcc6cdfb43220ade05d01add9c5468ea097";
 			expect((await tokenVesting.computeVestingScheduleIdForAddressAndIndex(addr1.address, 0)).toString()).to.equal(
 				expectedVestingScheduleId
@@ -496,7 +525,7 @@ describe("TokenVestingV2", function () {
 		});
 
 		it("Should check input parameters for createVestingSchedule method", async function () {
-			const tokenVesting = await deploy();
+			const tokenVesting = await deploy_v2();
 			const time = Date.now() / 1000 | 0;
 			await expect(tokenVesting.createVestingSchedule(addr1.address, time, 0, 0, 1, false, 1, 0)).to.be.revertedWith(
 				"TokenVesting: duration must be > 0"
