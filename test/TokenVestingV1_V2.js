@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 
-describe("TokenVestingV2", function () {
+describe("TokenVesting: V1 -> V2 Upgrade", function () {
 	let Token;
 	const totalSupply = 1000000;
 	let testToken;
