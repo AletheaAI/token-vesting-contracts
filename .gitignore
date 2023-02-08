@@ -5,6 +5,6 @@ contracts/artifacts
 .idea
 artifacts
 cache
-data
+#data
 coverage*
 env
