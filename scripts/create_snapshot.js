@@ -4,9 +4,8 @@
  * Run: npx hardhat run ./scripts/create_snapshot.js --network mainnet
  *
  * Input(s): None (all the required data is taken from deployments/network)
- * Output(s): ./data/vesting_data.csv file created in the project root
+ * Output(s): ./data/vesting_data.csv
  */
-
 
 // We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
@@ -17,9 +16,9 @@
 const hre = require("hardhat");
 
 // we will be writing CSV file with fs
-const fs = require('fs');
+const fs = require("fs");
 // we need a path separator to create a dir
-const path = require('path')
+const path = require("path");
 
 // we're going to use async/await programming style, therefore we put
 // all the logic into async main and execute it in the end of the file
