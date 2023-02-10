@@ -15,6 +15,10 @@ const path = require("path");
 // we will asserts to validate some data constraints
 const assert = require("node:assert");
 
+// BN utils
+const web3 = require("web3");
+const BN = web3.utils.BN;
+
 // read vesting and staking data CSV files
 const vestingData = fs.readFileSync("./data/vesting_data.csv", "utf8").split("\n");
 assert(vestingData[0] === "scheduleId,initialized,revocable,revoked,beneficiary,cliff,start,duration,slicePeriodSeconds,amountTotal,immediatelyReleasableAmount,released", "unexpected CSV file header in vesting_data.csv");
@@ -43,7 +47,11 @@ const enrichedVestingData = vestingData
 	// sort by revoked: revoked entries should go last
 	.sort((a, b) => ("true" === a[3]) - ("true" === b[3]))
 	// enrich each array with the data from staking mapping
-	.map(array => [...array, ...(stakingMapping[array[4]] || [0, 0, 0, 0])]);
+	.map(array => [...array, ...(stakingMapping[array[4]] || [0, 0, 0, 0])])
+	// finally make big numbers readable by dividing by 10^18
+	.map(array => array.map((element, i) =>
+		[9, 10, 11, 12, 13, 14, 15].indexOf(i) >= 0? new BN(element).div(new BN(10).pow(new BN(18))): element)
+	);
 
 // pick a CSV file name to write into
 const csv_file = "./data/vesting_data_enriched.csv";
